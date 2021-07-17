@@ -1,0 +1,36 @@
+version: "3.3"
+
+services:
+
+  php:
+    build:
+      context: .
+      dockerfile: ./docker/php/Dockerfile
+    container_name: php
+    working_dir: /var/www/
+    volumes:
+      - ./:/var/www
+    networks:
+      - app
+
+  bbdd:
+    container_name: bbdd
+    image: mysql:8.0
+    ports:
+      - 3360:3306
+    environment:
+      - MYSQL_ROOT_PASSWORD=
+      - MYSQL_ALLOW_EMPTY_PASSWORD=no
+    healthcheck:
+      test: [ "CMD", "mysqladmin", "--user=root", "--password=", "--host=127.0.0.1", "ping", "--silent" ]
+      interval: 2s
+      timeout: 10s
+      retries: 10
+    command: [ "--default-authentication-plugin=mysql_native_password" ]
+    networks:
+      - app
+
+#Docker Networks
+networks:
+  app:
+    driver: bridge
