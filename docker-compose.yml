@@ -1,34 +1,53 @@
 version: "3.3"
 
 services:
-
-  php:
+  php_api:
+    container_name: rgr_api
     build:
       context: .
       dockerfile: ./docker/php/Dockerfile
-    container_name: php
-    working_dir: /var/www/
+    restart: unless-stopped
+    ports:
+      - "8040:8040"
+      - "9040:9001"
     volumes:
-      - ./:/var/www
+      - .:/app:delegated
+    #command: symfony serve --dir=apps/api/public --port=8040 --force-php-discovery
+    command: symfony serve --port=8040 --force-php-discovery
     networks:
       - app
 
-  bbdd:
-    container_name: bbdd
-    image: mysql:8.0
-    ports:
-      - 3360:3306
-    environment:
-      - MYSQL_ROOT_PASSWORD=
-      - MYSQL_ALLOW_EMPTY_PASSWORD=no
-    healthcheck:
-      test: [ "CMD", "mysqladmin", "--user=root", "--password=", "--host=127.0.0.1", "ping", "--silent" ]
-      interval: 2s
-      timeout: 10s
-      retries: 10
-    command: [ "--default-authentication-plugin=mysql_native_password" ]
-    networks:
-      - app
+  mysql:
+      container_name: rgr_api_bbdd
+      image: mysql:8.0
+      restart: always
+      environment:
+        MYSQL_DATABASE: 'api'
+        MYSQL_USER: 'user'
+        MYSQL_PASSWORD: 'password'
+        MYSQL_ROOT_PASSWORD: "root"
+        MYSQL_ALLOW_EMPTY_PASSWORD: "yes"
+      command: [ "--default-authentication-plugin=mysql_native_password" ]
+      ports:
+        # <Port exposed> : < MySQL Port running inside container>
+        - '3306:3306'
+      expose:
+        # Opens port 3306 on the container
+        - '3306'
+        # Where our data will be persisted
+      volumes:
+        - mysql_ddbb:/var/lib/mysql
+      healthcheck:
+        test: [ "CMD", "mysqladmin", "--user=user", "--password=password", "--host=127.0.0.1", "ping", "--silent" ]
+        interval: 2s
+        timeout: 10s
+        retries: 10
+      networks:
+        - app
+
+# Names our volume
+volumes:
+  mysql_ddbb:
 
 #Docker Networks
 networks:
